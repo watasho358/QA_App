@@ -4,13 +4,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -22,9 +19,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.HashMap;
 import java.util.Map;
 
+import static jp.techacademy.watanabe.shouta.qa_app.MainActivity.mFavoriteMap;
+
 public class QuestionDetailActivity extends AppCompatActivity {
 
-    FirebaseAuth mAuth;
     private ListView mListView;
     private Question mQuestion;
     private QuestionDetailListAdapter mAdapter;
@@ -149,16 +147,17 @@ public class QuestionDetailActivity extends AppCompatActivity {
                 Map<String, Integer> data = new HashMap<String, Integer>();
                 data.put("Genre", mQuestion.getGenre());
                 mFavoriteRef.setValue(data);
+                mFavoriteMap.put(mQuestion.getQuestionUid(), (long) mQuestion.getGenre());
                 favoriteButton.setText("解除");
                 //解除ボタンを押したとき
             } else {
                 mFavoriteFlag = false;
                 mFavoriteRef.removeValue();
+                mFavoriteMap.remove(mQuestion.getQuestionUid());
                 favoriteButton.setText("お気に入り");
             }
         }
     };
 
 }
-
 

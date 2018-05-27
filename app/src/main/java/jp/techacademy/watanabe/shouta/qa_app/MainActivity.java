@@ -28,15 +28,17 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public  class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity {
 
     private Toolbar mToolbar;
     private int mGenre = 0;
     private DatabaseReference mDatabaseReference;
+    private DatabaseReference mFavoriteRef;
     private DatabaseReference mGenreRef;
     private ListView mListView;
     private ArrayList<Question> mQuestionArrayList;
     private QuestionsListAdapter mAdapter;
+    static HashMap<String, Long> mFavoriteMap;
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -120,6 +122,7 @@ public  class MainActivity extends AppCompatActivity{
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,9 +175,9 @@ public  class MainActivity extends AppCompatActivity{
                     mToolbar.setTitle("コンピューター");
                     mGenre = 4;
                 } else if (id == R.id.nav_favorite) {
-                    mToolbar.setTitle("お気に入り");
                     Intent intent = new Intent(getApplicationContext(), FavoriteActivity.class);
                     startActivity(intent);
+                    return true;
                 }
 
                 DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -217,11 +220,51 @@ public  class MainActivity extends AppCompatActivity{
 
     }
 
+    private ChildEventListener mFavEventListener = new ChildEventListener() {
+
+        @Override
+        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+            HashMap map = (HashMap) dataSnapshot.getValue();
+            Long genre = (Long) map.get("Genre");
+
+            mFavoriteMap.put(dataSnapshot.getKey(), genre);
+
+        }
+
+        @Override
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+        }
+
+        @Override
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+        }
+
+        @Override
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+
+        }
+    };
+
     @Override
     protected void onResume() {
         super.onResume();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        MenuItem favitem = ((NavigationView)findViewById(R.id.nav_view)).getMenu().findItem(R.id.nav_favorite);
+        if (user == null) {
+
+        } else {
+            mFavoriteMap = new HashMap<String, Long>();
+            DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
+            mFavoriteRef = dataBaseReference.child(Const.FavoritesPATH).child(user.getUid());
+            mFavoriteRef.addChildEventListener(mFavEventListener);
+        }
+        MenuItem favitem = ((NavigationView) findViewById(R.id.nav_view)).getMenu().findItem(R.id.nav_favorite);
         favitem.setVisible(FirebaseAuth.getInstance().getCurrentUser() != null);
 
     }

@@ -8,8 +8,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -19,53 +17,21 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static jp.techacademy.watanabe.shouta.qa_app.MainActivity.mFavoriteMap;
+
 public class FavoriteActivity extends AppCompatActivity {
 
-    private int mGenre = 0;
     private DatabaseReference mFavoriteRef;
     private DatabaseReference mQuestionRef;
     private ListView mListView;
     private ArrayList<Question> mQuestionArrayList;
     private QuestionsListAdapter mAdapter;
-    private HashMap<String, Integer> mFavoriteMap;
-
-    private ChildEventListener mEventListener = new ChildEventListener() {
-
-        @Override
-        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-            HashMap map = (HashMap) dataSnapshot.getValue();
-            Integer genre = (Integer) map.get("genre");
-
-            mFavoriteMap.put(dataSnapshot.getKey(), genre);
-
-        }
-
-        @Override
-        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-        }
-
-        @Override
-        public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-        }
-
-        @Override
-        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-        }
-
-        @Override
-        public void onCancelled(DatabaseError databaseError) {
-
-        }
-    };
 
     private ChildEventListener mEventListenerQuestion = new ChildEventListener() {
 
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-            if(mFavoriteMap.containsKey(dataSnapshot.getKey())) {
+            if (mFavoriteMap.containsKey(dataSnapshot.getKey())) {
                 HashMap map = (HashMap) dataSnapshot.getValue();
                 String title = (String) map.get("title");
                 String body = (String) map.get("body");
@@ -91,8 +57,9 @@ public class FavoriteActivity extends AppCompatActivity {
                         answerArrayList.add(answer);
                     }
                 }
+                long genre = mFavoriteMap.get(dataSnapshot.getKey());
 
-                Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), mGenre, bytes, answerArrayList);
+                Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), (int) genre, bytes, answerArrayList);
                 mQuestionArrayList.add(question);
                 mAdapter.notifyDataSetChanged();
             }
@@ -124,20 +91,14 @@ public class FavoriteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_favorite);
-        mFavoriteMap = new HashMap<String, Integer>();
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
-        mFavoriteRef = dataBaseReference.child(Const.FavoritesPATH).child(user.getUid());
-        mFavoriteRef.addChildEventListener(mEventListener);
-        for (int i = 1; i < 5; i++) {
-            mQuestionRef = dataBaseReference.child(Const.ContentsPATH).child(String.valueOf(i));
-            mQuestionRef.addChildEventListener(mEventListenerQuestion);
-        }
 
         mListView = (ListView) findViewById(R.id.listView);
         mAdapter = new QuestionsListAdapter(this);
         mQuestionArrayList = new ArrayList<Question>();
         mAdapter.notifyDataSetChanged();
+        mAdapter.setQuestionArrayList(mQuestionArrayList);
+        mListView.setAdapter(mAdapter);
 
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -148,5 +109,9 @@ public class FavoriteActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        for (int i = 1; i < 5; i++) {
+            DatabaseReference mQuestionRef = dataBaseReference.child(Const.ContentsPATH).child(String.valueOf(i));
+            mQuestionRef.addChildEventListener(mEventListenerQuestion);
+        }
     }
 }
